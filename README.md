@@ -4,15 +4,15 @@
 
 The `qfs_filelock.py` script monitors directories on a Qumulo cluster for changes such as new file creation. The script leverages the Qumulo SDK/API for interacting with the file system, making it a powerful tool for administrators looking to enforce strict data protection policies on their Qumulo storage clusters.
 
-It listens for events via [SSE Payload Notification Types](#sse-payload-notification-types), streaming JSON-encoded notifications to the client. The file notifications can be specified based on the available type listed in the [notification types](#sse-payload-notification-types) section. 
+It listens for events via [SSE Payload Notification Types](#sse-payload-notification-types), streaming JSON-encoded notifications to the client. The file notifications can be specified based on the available types listed [here](#sse-payload-notification-types). 
 
-When changes are detected, the script attempts to apply a Write Once Read Many (WORM) lock to the affected file, ensuring the integrity and immutability of critical data. Notifications are processed serially, but this can be modified based on customer implementation. The script optionally allows for recursive monitoring of all subdirectories and includes a debug mode for detailed logging. 
+When changes are detected, the script attempts to apply a Write Once Read Many (WORM) lock to the affected file, ensuring the integrity and immutability of critical data. Notifications are processed serially, but customers can modify the script to meet their requirements. It also allows for recursive monitoring of all subdirectories and includes a debug mode for detailed logging. 
 
-*Note: Performance may be impacted when there are many or deeply nested subdirectories to monitor, or when more than 100,000 files exist in a single directory.*
+> *Note: Performance may be impacted when there are many or deeply nested subdirectories to monitor, or when more than 100,000 files exist in a single directory.*
 
 ## Installation
 
-To use the `qfs_filelock.py` script, you'll need to install the required Python modules. The following instructions assume you are running Ubuntu. This script can also be run on Windows, assuming you have python3 and required modules installed.
+To use the `qfs_filelock.py` script, you'll need to install the required Python packages. The following instructions assume you are running Ubuntu, however this script can also be run on Windows, assuming you have python3 and required packages installed.
 
 ### Prerequisites
 
@@ -26,7 +26,7 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 2. Install the necessary Python packages:
 
     ```bash
-    pip3 install argparse configparser json logging os re requests sys time urllib3 warnings datetime qumulo-api-py
+    pip3 install argparse configparser json logging os re requests sys time urllib3 warnings datetime qumulo-api
     ```
 
     For Windows, the same `pip3 install` command can be used from your Command Prompt or PowerShell.
@@ -52,7 +52,17 @@ Version: 7.2.1
     chmod +x qfs_filelock.py
     ```
 
-3. Modify the script if needed to point to the correct path for the Qumulo SDK in the `local_sdk_path` variable.
+3. Create the configuration file, example below.
+
+[`qfs_filelock_config.ini`]
+
+```ini
+[DEFAULT]
+API_HOST = qumulo-cluster.example.com
+API_PORT = 8000
+USERNAME = admin
+PASSWORD = your_password_here
+```
 
 ## Getting Started
 
@@ -60,7 +70,9 @@ The script can be used in various configurations, depending on your monitoring a
 
 ### Basic Usage
 
-1. **Monitoring a Specific File by ID:**
+1. **Monitoring a Specific Directory by File ID.**
+
+    *(A directory in a file system utilizes an inode similar to a file, which is why it’s referred to as a file id)*
 
     ```bash
     ./qfs_filelock.py --file-id <FILE_ID> --config-file <CONFIG_FILE_PATH>
@@ -106,18 +118,6 @@ The script can be used in various configurations, depending on your monitoring a
     ./qfs_filelock.py --directory-path <DIRECTORY_PATH> --config-file <CONFIG_FILE_PATH> --output /path/to/output.log
     ```
 
-### Example Configuration File
-
-The configuration file should provide the necessary details to connect to the Qumulo API:
-
-```ini
-[DEFAULT]
-API_HOST = qumulo-cluster
-API_PORT = 8000
-USERNAME = admin
-PASSWORD = your_password_here
-```
-
 ### Example Execution
 
 ```bash
@@ -125,12 +125,6 @@ PASSWORD = your_password_here
 ```
 
 This command monitors the `/data/important_files` directory and all its subdirectories for changes, locks files upon changes, and logs detailed debug information.
-
-### Debug Mode, Logging, and Saving Output
-
-The script supports a debug mode that can be enabled with the `--debug` flag. When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting. The logging is controlled by Python's `logging` module, which allows for flexible log management.
-
-In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. This is particularly useful if you need to retain logs for audit purposes or further analysis.
 
 ## SSE Payload Notification Types
 
@@ -155,7 +149,7 @@ The following table describes the various SSE payload notification types. For mo
 
 ## Helpful Commands
 
-Authenticate to the Qumulo `qq` CLI prior to running these commands. For example: `qq --host X.X.X.X login -u admin -p Y0urP@55w0rd!`
+Authenticate to the Qumulo `qq` CLI prior to running these commands. For example: `qq --host X.X.X.X login -u admin -p your_password_here`
 
 1. **Determining a Directory's File Number:**
 
@@ -187,6 +181,18 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
 
     This command retrieves the file's attributes, including the lock status, and displays it using `jq`.
 
+
+### Troubleshooting
+
+The script includes a debug mode, has verbose logging, and you can save the output to a file for further analysis.  
+
+- The debug mode that can be enabled with the `--debug` flag. 
+   - When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting. 
+   - The logging is controlled by Python's `logging` module, which allows for flexible log management.
+
+- In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. 
+   - This is particularly useful if you need to retain logs for audit purposes or further analysis.
+   
 ## Relevant Links
 
 - [Watching for File Attribute and Directory Changes Using REST](https://docs.qumulo.com/administrator-guide/watching-file-attribute-directory-changes/rest.html)
