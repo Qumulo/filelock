@@ -1,6 +1,18 @@
 # QFS File Lock Script
 
-## Overview
+## Why File Locking? 
+
+File locking in a Qumulo file system is beneficial for customers needing to comply with immutable data retention policies, whether required by company policies or mandated by regulations. It provides a mechanism to WORM protect (Write Once Read Many) files, ensuring that data, once written, cannot be modified or deleted until a specified retention period has been reached. This feature is especially useful in industries like finance, healthcare, and legal sectors, where data integrity and compliance are critical. Qumulo’s file locking capability protects against accidental or malicious data alterations, making it a valuable tool for long-term data preservation.
+
+<p align="center">
+  <img src="qfs_filelock_process_flow_diagram.png" alt="QFS File Lock Process Flow Diagram">
+</p>
+
+<p align="center">
+QFS File Lock Process Flow Diagram
+</p>
+
+## Overview 
 
 The `qfs_filelock.py` script monitors directories on a Qumulo cluster for changes such as new file creation. The script leverages the Qumulo SDK/API for interacting with the file system, making it a powerful tool for administrators looking to enforce strict data protection policies on their Qumulo storage clusters.
 
