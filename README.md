@@ -12,11 +12,11 @@ When changes are detected, the script attempts to apply a Write Once Read Many (
 
 ## Installation
 
-To use the `qfs_filelock.py` script, you'll need to install the required Python modules. The following instructions assume you are running Ubuntu. This script can also be run on Windows, assuming you have Python 3 and the necessary Python modules installed.
+To use the `qfs_filelock.py` script, you'll need to install the required Python modules. The following instructions assume you are running Ubuntu. This script can also be run on Windows, assuming you have python3 and required modules installed.
 
 ### Prerequisites
 
-1. Ensure Python 3 is installed:
+1. Ensure python3 is installed:
 
     ```bash
     sudo apt-get update
@@ -31,7 +31,11 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 
     For Windows, the same `pip3 install` command can be used from your Command Prompt or PowerShell.
 
-3. Ensure you have access to the Qumulo Python SDK, which might be provided by Qumulo or available as part of your installation.
+3. Ensure you are using a version of the Qumulo Python SDK >= 7.2.1 
+```
+$ sudo pip show qumulo-api | grep Version
+Version: 7.2.1
+```
 
 ### Installing the Script
 
@@ -50,7 +54,7 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 
 3. Modify the script if needed to point to the correct path for the Qumulo SDK in the `local_sdk_path` variable.
 
-## How to Use
+## Getting Started
 
 The script can be used in various configurations, depending on your monitoring and locking requirements.
 
@@ -86,7 +90,7 @@ The script can be used in various configurations, depending on your monitoring a
 
 5. **Setting Polling Interval:**
 
-    By default, the script polls for notifications every 15 seconds. This can be adjusted using the `--interval` option.
+    By default, the script polls for notifications every 15 seconds. This can be adjusted using the `--interval` option, including "0" which locks the file immediately.
 
     ```bash
     ./qfs_filelock.py --directory-path <DIRECTORY_PATH> --config-file <CONFIG_FILE_PATH> --interval 30
@@ -101,33 +105,6 @@ The script can be used in various configurations, depending on your monitoring a
     ```bash
     ./qfs_filelock.py --directory-path <DIRECTORY_PATH> --config-file <CONFIG_FILE_PATH> --output /path/to/output.log
     ```
-
-### Debug Mode, Logging, and Saving Output
-
-The script supports a debug mode that can be enabled with the `--debug` flag. When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting. The logging is controlled by Python's `logging` module, which allows for flexible log management.
-
-In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. This is particularly useful if you need to retain logs for audit purposes or further analysis.
-
-### SSE Payload Notification Types
-
-The following table describes the various SSE payload notification types. For more details, refer to the [Qumulo Documentation on Watching File Attribute and Directory Changes](https://docs.qumulo.com/administrator-guide/watching-file-attribute-directory-changes/rest.html).
-
-| Notification Type            | Description                                                                 |
-|------------------------------|-----------------------------------------------------------------------------|
-| `child_acl_changed`           | ACL for the listed file or directory has been modified.                     |
-| `child_atime_changed`         | `atime` (access time) of the listed file or directory has been modified.    |
-| `child_btime_changed`         | `btime` (creation time) of the listed file or directory has been modified.  |
-| `child_mtime_changed`         | `mtime` (modification time) of the listed file or directory has been modified. |
-| `child_data_written`          | Data has been written to the listed file.                                   |
-| `child_dir_added`             | The listed directory has been created.                                      |
-| `child_dir_removed`           | The listed directory has been removed.                                      |
-| `child_dir_moved_from`        | The listed directory has been moved from its location.                      |
-| `child_dir_moved_to`          | The listed directory has been moved to a new location.                      |
-| `child_file_added`            | The listed file has been added to the directory.                            |
-| `child_file_removed`          | The listed file has been removed from the directory.                        |
-| `child_file_moved_from`       | The listed file has been moved from its location.                           |
-| `child_file_moved_to`         | The listed file has been moved to a new location.                           |
-| `child_extra_attrs_changed`   | Extra attributes of the listed file or directory have been modified.        |
 
 ### Example Configuration File
 
@@ -149,22 +126,55 @@ PASSWORD = your_password_here
 
 This command monitors the `/data/important_files` directory and all its subdirectories for changes, locks files upon changes, and logs detailed debug information.
 
+### Debug Mode, Logging, and Saving Output
+
+The script supports a debug mode that can be enabled with the `--debug` flag. When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting. The logging is controlled by Python's `logging` module, which allows for flexible log management.
+
+In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. This is particularly useful if you need to retain logs for audit purposes or further analysis.
+
+## SSE Payload Notification Types
+
+The following table describes the various SSE payload notification types. For more details, refer to the [Qumulo Documentation on Watching File Attribute and Directory Changes](https://docs.qumulo.com/administrator-guide/watching-file-attribute-directory-changes/rest.html).
+
+| Notification Type            | Description                                                                 |
+|------------------------------|-----------------------------------------------------------------------------|
+| `child_acl_changed`           | ACL for the listed file or directory has been modified.                     |
+| `child_atime_changed`         | `atime` (access time) of the listed file or directory has been modified.    |
+| `child_btime_changed`         | `btime` (creation time) of the listed file or directory has been modified.  |
+| `child_mtime_changed`         | `mtime` (modification time) of the listed file or directory has been modified. |
+| `child_data_written`          | Data has been written to the listed file.                                   |
+| `child_dir_added`             | The listed directory has been created.                                      |
+| `child_dir_removed`           | The listed directory has been removed.                                      |
+| `child_dir_moved_from`        | The listed directory has been moved from its location.                      |
+| `child_dir_moved_to`          | The listed directory has been moved to a new location.                      |
+| `child_file_added`            | The listed file has been added to the directory.                            |
+| `child_file_removed`          | The listed file has been removed from the directory.                        |
+| `child_file_moved_from`       | The listed file has been moved from its location.                           |
+| `child_file_moved_to`         | The listed file has been moved to a new location.                           |
+| `child_extra_attrs_changed`   | Extra attributes of the listed file or directory have been modified.        |
+
 ## Helpful Commands
+
+Authenticate to the Qumulo `qq` CLI prior to running these commands. For example: `qq --host X.X.X.X login -u admin -p Y0urP@55w0rd!`
 
 1. **Determining a Directory's File Number:**
 
     You can determine a directory's file number using the Qumulo `qq` CLI command:
 
     ```bash
-    qq --host X.X.X.X fs_file_get_attr --path /test | jq .file_number
+    qq --host X.X.X.X fs_file_get_attr --path /path/to/directory | jq .file_number
     ```
 
 2. **Locking a File Using the CLI:**
 
-    You can manually lock a file using the Qumulo `qq` CLI command:
+    You can manually lock a file using the Qumulo `qq` CLI command by path or the directories file number (id):
 
     ```bash
-    qq --host X.X.X.X fs_file_set_lock --path /path/to/directory --days 1
+    qq --host X.X.X.X fs_file_set_lock --path /path/to/directory/this_is_a_locked.file --days 1
+    ```
+
+    ```bash
+    qq --host X.X.X.X fs_file_set_lock --file-id 133742 --days 1
     ```
 
 3. **Verifying if a File is Locked**
