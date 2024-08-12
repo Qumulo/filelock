@@ -54,7 +54,7 @@ Version: 7.2.1
 
 3. Create the configuration file, example below.
 
-[`qfs_filelock_config.ini`]
+`qfs_filelock_config.ini`:
 
 ```ini
 [DEFAULT]
@@ -66,7 +66,7 @@ PASSWORD = your_password_here
 
 ## Getting Started
 
-The script can be used in various configurations, depending on your monitoring and locking requirements.
+The script offers various options based on your monitoring and locking needs.
 
 ### Basic Usage
 
@@ -192,7 +192,7 @@ The script includes a debug mode, has verbose logging, and you can save the outp
 
 - In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. 
    - This is particularly useful if you need to retain logs for audit purposes or further analysis.
-   
+
 ## Relevant Links
 
 - [Watching for File Attribute and Directory Changes Using REST](https://docs.qumulo.com/administrator-guide/watching-file-attribute-directory-changes/rest.html)
