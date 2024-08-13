@@ -77,16 +77,16 @@ USERNAME = admin
 PASSWORD = your_password_here
 ```
 
-## Configuration Setup with `--configure` Option
+### Configuration Setup with `--configure` Option
 
 The `--configure` option is a new feature that allows you to interactively create a configuration file for the script. This option simplifies the setup process by guiding you through the necessary steps to configure the script for your Qumulo cluster.
 
-### When to Use `--configure`
+#### When to Use `--configure`
 
 - **First-Time Setup:** If you are setting up the script for the first time, the `--configure` option will help you generate a valid configuration file with minimal effort.
 - **Updating Configuration:** Use `--configure` to update an existing configuration file, such as when the API host, port, or user credentials change.
 
-### How It Works
+#### How It Works
 
 When you run the script with the `--configure` option, it will prompt you for the following details:
 
@@ -97,7 +97,7 @@ When you run the script with the `--configure` option, it will prompt you for th
 
 Based on your inputs, the script will generate a configuration file (`qfs_filelock_config.ini` by default) that stores these details securely.
 
-### Example Usage
+#### Example Usage
 
 To create or update the configuration file:
 
@@ -121,7 +121,7 @@ Once completed, the script will save the configuration file, and you will see a 
 Configuration saved to qfs_filelock_config.ini
 ```
 
-### Benefits of Using `--configure`
+#### Benefits of Using `--configure`
 
 - **Ease of Use:** No need to manually edit configuration files. The script automatically creates the file based on your inputs.
 - **Error Prevention:** Reduces the likelihood of errors that might occur when manually editing the configuration file, such as syntax errors or incorrect field names.
