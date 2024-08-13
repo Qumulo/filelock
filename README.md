@@ -24,11 +24,11 @@ When changes are detected, the script attempts to apply a Write Once Read Many (
 
 ## Installation
 
-To use the `qfs_filelock.py` script, you'll need to install the required Python packages. The following instructions assume you are running Ubuntu, however this script can also be run on Windows, assuming you have python3 and required packages installed.
+To use the `qfs_filelock.py` script, you'll need to install the required Python packages. The following instructions assume you are running Ubuntu, however, this script can also be run on Windows, assuming you have Python 3 and the required packages installed.
 
 ### Prerequisites
 
-1. Ensure python3 is installed:
+1. Ensure Python 3 is installed:
 
     ```bash
     sudo apt-get update
@@ -44,6 +44,7 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
     For Windows, the same `pip3 install` command can be used from your Command Prompt or PowerShell.
 
 3. Ensure you are using a version of the Qumulo Python SDK >= 7.2.1 
+
 ```
 $ sudo pip show qumulo-api | grep Version
 Version: 7.2.1
@@ -76,9 +77,62 @@ USERNAME = admin
 PASSWORD = your_password_here
 ```
 
+## Configuration Setup with `--configure` Option
+
+The `--configure` option is a new feature that allows you to interactively create a configuration file for the script. This option simplifies the setup process by guiding you through the necessary steps to configure the script for your Qumulo cluster.
+
+### When to Use `--configure`
+
+- **First-Time Setup:** If you are setting up the script for the first time, the `--configure` option will help you generate a valid configuration file with minimal effort.
+- **Updating Configuration:** Use `--configure` to update an existing configuration file, such as when the API host, port, or user credentials change.
+
+### How It Works
+
+When you run the script with the `--configure` option, it will prompt you for the following details:
+
+- **API Host:** The hostname or IP address of your Qumulo cluster.
+- **API Port:** The port number for the Qumulo API (typically 8000).
+- **Username:** The username used to log in to the Qumulo cluster.
+- **Password:** The password associated with the specified username.
+
+Based on your inputs, the script will generate a configuration file (`qfs_filelock_config.ini` by default) that stores these details securely.
+
+### Example Usage
+
+To create or update the configuration file:
+
+```bash
+./qfs_filelock.py --configure
+```
+
+The script will then guide you through the configuration process:
+
+```
+Configuring qfs_filelock_config.ini
+Enter API Host: <your_api_host>
+Enter API Port: <your_api_port>
+Enter Username: <your_username>
+Enter Password: <your_password>
+```
+
+Once completed, the script will save the configuration file, and you will see a confirmation message:
+
+```
+Configuration saved to qfs_filelock_config.ini
+```
+
+### Benefits of Using `--configure`
+
+- **Ease of Use:** No need to manually edit configuration files. The script automatically creates the file based on your inputs.
+- **Error Prevention:** Reduces the likelihood of errors that might occur when manually editing the configuration file, such as syntax errors or incorrect field names.
+- **Security:** Passwords are handled securely within the script, ensuring that your credentials are not exposed unnecessarily.
+
+This option is especially useful for users who are new to the script or for administrators who need to quickly update the configuration on multiple systems.
+
 ## Getting Started
 
 The script offers various options based on your monitoring and locking needs.
+
 
 ### Basic Usage
 
@@ -173,7 +227,7 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
 
 2. **Locking a File Using the CLI:**
 
-    You can manually lock a file using the Qumulo `qq` CLI command by path or the directories file number (id):
+    You can manually lock a file using the Qumulo `qq` CLI command by path or the directory's file number (id):
 
     ```bash
     qq --host X.X.X.X fs_file_set_lock --path /path/to/directory/this_is_a_locked.file --days 1
@@ -193,18 +247,59 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
 
     This command retrieves the file's attributes, including the lock status, and displays it using `jq`.
 
+## Troubleshooting
 
-### Troubleshooting
+The script includes a debug mode, has verbose logging, and you can save the output to a file for further analysis.
 
-The script includes a debug mode, has verbose logging, and you can save the output to a file for further analysis.  
-
-- The debug mode that can be enabled with the `--debug` flag. 
-   - When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting. 
+- The debug mode can be enabled with the `--debug` flag.
+   - When debug mode is enabled, the script generates detailed log entries that can be useful for troubleshooting.
    - The logging is controlled by Python's `logging` module, which allows for flexible log management.
 
-- In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option. 
+- In addition to printing log messages to the console, you can also save the output to a file by using the `--output` option.
    - This is particularly useful if you need to retain logs for audit purposes or further analysis.
 
+### Common Issues and Resolutions
+
+1. **Connection Timeouts:**
+   - **Symptom:** The script fails to connect to the Qumulo cluster, and logs indicate a timeout.
+   - **Resolution:** Verify network connectivity between the machine running the script and the Qumulo cluster. Ensure that the API host and port in the configuration file are correct.
+
+2. **Authentication Errors:**
+   - **Symptom:** The script returns authentication errors when trying to log in to the Qumulo cluster.
+   - **Resolution:** Double-check the username and password in the configuration file. Ensure that the user has the necessary permissions to perform file locking.
+
+3. **Unexpected Script Termination:**
+   - **Symptom:** The script stops running unexpectedly or returns an unhandled exception.
+   - **Resolution:** Run the script with the `--debug` flag to capture detailed logs. Check the logs for any specific error messages that could indicate the cause. Ensure that all required arguments are provided, and the configuration file is correctly set up.
+
+4. **File Lock Not Effective:**
+   - **Symptom:** Files are not being locked as expected.
+   - **Resolution:** Ensure that either a valid retention period or legal hold is specified. If neither is set, the script will log a warning and the lock will not be effective.
+
+5. **Log File Size Management:**
+   - **Symptom:** The log file specified with the `--output` option grows too large.
+   - **Resolution:** Implement log rotation using tools like `logrotate` on Linux. Alternatively, periodically archive and clear the log file manually.
+
+6. **Performance Degradation with Large Directories:**
+   - **Symptom:** The script runs slowly or uses excessive CPU/memory when monitoring large directories or deeply nested subdirectories.
+   - **Resolution:** Reduce the number of monitored directories if possible, or increase the polling interval using the `--interval` option. Consider running the script on a more powerful machine if hardware limitations are causing the slowdown.
+
+7. **Handling SIGPIPE Errors:**
+   - **Symptom:** The script fails with a BrokenPipeError when running in a piped command sequence.
+   - **Resolution:** The script now handles SIGPIPE signals gracefully. If you encounter this issue, ensure that the latest version of the script is being used, which includes the `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` line.
+
+8. **Missing File or Directory Error:**
+   - **Symptom:** The script logs errors about missing files or directories.
+   - **Resolution:** Verify that the paths specified in the `--directory-path` or `--file-num` options exist and are accessible by the script.
+
+### Logging and Debugging Tips
+
+- **Log Levels:** Use `--debug` for maximum verbosity in logs. You can also modify the logging level in the script to capture different levels of detail.
+- **Log Analysis:** Regularly review logs for any recurring issues, especially in long-running processes or scripts running as daemons.
+- **Time Synchronization:** Ensure that the system clock on the machine running the script is synchronized with the Qumulo cluster, as discrepancies can cause issues with time-based operations like retention periods.
+
+By following these troubleshooting steps, you should be able to resolve most issues encountered while using the `qfs_filelock.py` script.
+   
 ## Relevant Links
 
 - [Watching for File Attribute and Directory Changes Using REST](https://docs.qumulo.com/administrator-guide/watching-file-attribute-directory-changes/rest.html)
@@ -232,6 +327,8 @@ The script includes a debug mode, has verbose logging, and you can save the outp
 
    Currently, there is no built-in way to list all locked files; you would need to use a custom script.
 
+
 ## About the Author
 
 This script was developed by Kevin McDonald (KMac) kmac@qumulo.com in August 2024. Qumulo, Inc. is a leader in scalable file storage solutions, and this script reflects our commitment to providing robust tools for data management and protection. If you have any questions or need further assistance, please contact us at support@qumulo.com.
+
