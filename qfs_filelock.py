@@ -13,13 +13,13 @@
 # Author:   kmac@qumulo.com
 #
 # Description:
-# - This script monitors a specified directory or file on a Qumulo cluster for 
+# - This script monitors a specified directory or file on a Qumulo cluster for
 #   changes, such as file additions or ACL modifications, using the Qumulo API.
-# - When a change is detected, the script attempts to apply a Write Once Read 
-#   Many (WORM) lock to the affected file. This is achieved by setting a file 
+# - When a change is detected, the script attempts to apply a Write Once Read
+#   Many (WORM) lock to the affected file. This is achieved by setting a file
 #   lock with a specified retention period.
 # - The script can operate in a recursive mode to monitor all subdirectories.
-# - Debug mode is available for detailed logging, and the script supports 
+# - Debug mode is available for detailed logging, and the script supports
 #   configurable polling intervals.
 # - Added support for specifying retention using days, date, or years.
 # - Added interactive configuration file generation.
@@ -46,7 +46,7 @@ from datetime import datetime, timedelta
 from urllib3.exceptions import InsecureRequestWarning
 from contextlib import redirect_stdout
 
-local_sdk_path = os.path.expanduser('~/src/cli')
+local_sdk_path = os.path.expanduser('/home/kmac/src/cli')
 sys.path.insert(0, local_sdk_path)
 
 from qumulo.rest_client import RestClient
@@ -75,13 +75,13 @@ def load_config(config_file_path):
 ################################################################################
 # function setup_logging - Set up logging configuration with optional file output
 ################################################################################
-def setup_logging(is_debug, log_file=None):  
+def setup_logging(is_debug, log_file=None):
     log_level = logging.DEBUG if is_debug else logging.INFO
     handlers = [logging.StreamHandler(sys.stdout)]
-    
+
     if log_file:  # Ensure to use `log_file` here
         handlers.append(logging.FileHandler(log_file))
-    
+
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s', handlers=handlers)
     logging.debug("Logging setup complete. Logging is now active.")
 
@@ -117,10 +117,7 @@ def parse_args():
         logging.debug(f"Exception details: {e}")
         sys.exit(1)
 
-################################################################################
-# function display_header - Display a header and write to output if specified
-################################################################################
-def display_header(args, file_number=None, file_path=None):
+def display_header(args, config, file_number=None, file_path=None):
     try:
         current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         width = 65
@@ -135,6 +132,9 @@ def display_header(args, file_number=None, file_path=None):
             "output": "Output File:",
             "retention": "Retention Period:",
             "legal_hold": "Legal Hold:",
+            "api_host": "API Host:",
+            "api_port": "API Port:",
+            "username": "Username:",
         }
 
         values = {
@@ -146,6 +146,9 @@ def display_header(args, file_number=None, file_path=None):
             "output": args.output,
             "retention": args.retention,
             "legal_hold": "True" if args.legal_hold else None,
+            "api_host": config['DEFAULT']['API_HOST'],
+            "api_port": config['DEFAULT']['API_PORT'],
+            "username": config['DEFAULT']['USERNAME'],
         }
 
         max_label_length = max(len(label) for label in attributes.values())
@@ -163,6 +166,7 @@ def display_header(args, file_number=None, file_path=None):
                 header.append(f'{border} {label}{" " * (max_label_length - len(label) + 1)}{str(value).ljust(width - max_label_length - 4)}{border}')
 
         header.append(f"{border * width}")
+
         for line in header:
             print(line, flush=True)
             if args.output:
@@ -171,6 +175,7 @@ def display_header(args, file_number=None, file_path=None):
     except Exception as e:
         logging.error("Failed to display header.")
         logging.debug(f"Exception details: {e}")
+
 
 ################################################################################
 # function parse_retention - Parse the retention period
@@ -181,7 +186,7 @@ def parse_retention(retention_period):
     if retention_period is None:
         logging.error("Retention is set to None, no retention period will be set.")
         return None
-    
+
     try:
         if retention_period.endswith('d'):
             days = int(retention_period[:-1])
@@ -214,7 +219,7 @@ def lock_file(rest_client, args, full_path, file_number, debug):
         full_path = re.sub(r'/+', '/', full_path)
         retention_period = None
 
-        if hasattr(args, 'retention') and args.retention: 
+        if hasattr(args, 'retention') and args.retention:
             retention_period = parse_retention(args.retention)
         else:
             logging.debug("Retention period not provided. No retention period will be set.")
@@ -468,14 +473,11 @@ def run_daemon(rest_client, args):
         logging.error("Error occurred in daemon process.")
         logging.debug(f"Exception details: {e}")
 
-################################################################################
-# Main function to execute the script
-################################################################################
 def main():
     try:
         args = parse_args()
         global interval
-        setup_logging(args.debug, log_file=args.output)  
+        setup_logging(args.debug, log_file=args.output)
 
         if args.configure:
             configure_interactive(args.config_file)
@@ -517,7 +519,7 @@ def main():
         else:
             if args.file_num or args.directory_path:
                 file_number, full_path = get_fileinfo(rc, file_number=args.file_num, directory_path=args.directory_path, debug=args.debug)
-                display_header(args, file_number, full_path)
+                display_header(args, config, file_number, full_path)
                 stream_notifications(rc, args, debug=args.debug, output_file=args.output)
             else:
                 logging.debug(f"{inspect.currentframe().f_code.co_name}: file_num is {file_number} and full_path is {full_path}")
