@@ -13,13 +13,13 @@
 # Author:   kmac@qumulo.com
 #
 # Description:
-# - This script monitors a specified directory or file on a Qumulo cluster for
+# - This script monitors a specified directory or file on a Qumulo cluster for 
 #   changes, such as file additions or ACL modifications, using the Qumulo API.
-# - When a change is detected, the script attempts to apply a Write Once Read
-#   Many (WORM) lock to the affected file. This is achieved by setting a file
+# - When a change is detected, the script attempts to apply a Write Once Read 
+#   Many (WORM) lock to the affected file. This is achieved by setting a file 
 #   lock with a specified retention period.
 # - The script can operate in a recursive mode to monitor all subdirectories.
-# - Debug mode is available for detailed logging, and the script supports
+# - Debug mode is available for detailed logging, and the script supports 
 #   configurable polling intervals.
 # - Added support for specifying retention using days, date, or years.
 # - Added interactive configuration file generation.
@@ -75,13 +75,13 @@ def load_config(config_file_path):
 ################################################################################
 # function setup_logging - Set up logging configuration with optional file output
 ################################################################################
-def setup_logging(is_debug, log_file=None):
+def setup_logging(is_debug, log_file=None):  
     log_level = logging.DEBUG if is_debug else logging.INFO
     handlers = [logging.StreamHandler(sys.stdout)]
-
+    
     if log_file:  # Ensure to use `log_file` here
         handlers.append(logging.FileHandler(log_file))
-
+    
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s', handlers=handlers)
     logging.debug("Logging setup complete. Logging is now active.")
 
@@ -186,7 +186,7 @@ def parse_retention(retention_period):
     if retention_period is None:
         logging.error("Retention is set to None, no retention period will be set.")
         return None
-
+    
     try:
         if retention_period.endswith('d'):
             days = int(retention_period[:-1])
@@ -219,7 +219,7 @@ def lock_file(rest_client, args, full_path, file_number, debug):
         full_path = re.sub(r'/+', '/', full_path)
         retention_period = None
 
-        if hasattr(args, 'retention') and args.retention:
+        if hasattr(args, 'retention') and args.retention: 
             retention_period = parse_retention(args.retention)
         else:
             logging.debug("Retention period not provided. No retention period will be set.")
