@@ -285,7 +285,7 @@ def lock_file(rest_client, args, full_path, file_number, debug):
                     log_file.write(f"{datetime.now()} - ERROR - {error_message}\n")
 
     except Exception as e:
-        error_message = f"Error in lock_file function."
+        error_message = f"Error in lock_file function: {e}."
         logging.error(error_message)
         if args.output:
             with open(args.output, 'a') as log_file:
