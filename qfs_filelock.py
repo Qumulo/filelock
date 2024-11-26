@@ -206,7 +206,7 @@ def parse_retention(retention_period):
         return None
 
 ################################################################################
-# function lock_file - Lock a file using Qumulo API's set_file_lock method
+# function lock_file - Lock a file using Qumulo API's modify_file_lock method
 ################################################################################
 def lock_file(rest_client, args, full_path, file_number, debug):
     logging.debug(f"{inspect.currentframe().f_code.co_name}:  Passed in: args is {args}, full_path is {full_path}, file_num is {file_number}")
@@ -243,7 +243,7 @@ def lock_file(rest_client, args, full_path, file_number, debug):
                 rest_client.login(username, password)
 
                 try:
-                    response = fs.set_file_lock(
+                    response = fs.modify_file_lock(
                         conninfo=rest_client.conninfo,
                         _credentials=rest_client.credentials,
                         path=full_path,
@@ -251,7 +251,7 @@ def lock_file(rest_client, args, full_path, file_number, debug):
                         legal_hold=args.legal_hold
                     )
                 except Exception as e:
-                    logging.info(f"An error occurred while calling set_file_lock: {str(e)}")
+                    logging.info(f"An error occurred while calling modify_file_lock: {str(e)}")
                     raise
 
                 success_message = f"Successfully locked file: {full_path}"
