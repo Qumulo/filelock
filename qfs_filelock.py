@@ -46,9 +46,6 @@ from datetime import datetime, timedelta
 from urllib3.exceptions import InsecureRequestWarning
 from contextlib import redirect_stdout
 
-local_sdk_path = os.path.expanduser('/home/kmac/src/cli')
-sys.path.insert(0, local_sdk_path)
-
 from qumulo.rest_client import RestClient
 import qumulo.rest.fs as fs
 
