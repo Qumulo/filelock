@@ -12,6 +12,8 @@
 # Date:     2024-08-16
 # Author:   kmac@qumulo.com
 #
+# Version:  20241126.1219
+#
 # Description:
 # - This script monitors a specified directory or file on a Qumulo cluster for 
 #   changes, such as file additions or ACL modifications, using the Qumulo API.
@@ -201,12 +203,16 @@ def parse_retention(retention_period):
         logging.error("Failed to parse retention period.")
         logging.debug(f"Exception details: {e}")
         return None
-
 ################################################################################
 # function lock_file - Lock a file using Qumulo API's modify_file_lock method
 ################################################################################
-def lock_file(rest_client, args, full_path, file_number, debug):
-    logging.debug(f"{inspect.currentframe().f_code.co_name}:  Passed in: args is {args}, full_path is {full_path}, file_num is {file_number}")
+
+from time import time
+
+recent_locks = {}
+
+def lock_file(rest_client, args, full_path, file_number, debug, cooldown=5):
+    logging.debug(f"{inspect.currentframe().f_code.co_name}: Passed in: args is {args}, full_path is {full_path}, file_num is {file_number}")
 
     try:
         if not os.path.isabs(full_path):
@@ -214,9 +220,49 @@ def lock_file(rest_client, args, full_path, file_number, debug):
             return
 
         full_path = re.sub(r'/+', '/', full_path)
+
+        current_time = time()
+        if full_path in recent_locks and (current_time - recent_locks[full_path]) < cooldown:
+            logging.debug(f"Skipping recently locked file: {full_path}")
+            return
+
+        try:
+            logging.debug("Attempting to get file attributes...")
+            file_attr = fs.get_file_attr(rest_client.conninfo, rest_client.credentials, path=full_path)
+            logging.debug(f"File attributes: {file_attr}")
+
+            if isinstance(file_attr, tuple):
+                file_attr = file_attr[0]
+
+            if not isinstance(file_attr, dict):
+                logging.error("Unexpected format for file attributes. Skipping.")
+                return
+
+        except Exception as e:
+            logging.debug("Failed to get file attributes. Reinitializing RestClient.")
+            config = load_config(args.config_file)
+            api_host = config['DEFAULT']['API_HOST']
+            api_port = config['DEFAULT']['API_PORT']
+            username = config['DEFAULT']['USERNAME']
+            password = config['DEFAULT']['PASSWORD']
+
+            rest_client = RestClient(api_host, api_port, timeout=120)
+            rest_client.login(username, password)
+            file_attr = fs.get_file_attr(rest_client.conninfo, rest_client.credentials, path=full_path)
+
+            if isinstance(file_attr, tuple):
+                file_attr = file_attr[0]
+            if not isinstance(file_attr, dict):
+                logging.error("Unexpected format for file attributes after reconnection. Skipping.")
+                return
+
+        if file_attr['type'] == 'FS_FILE_TYPE_DIRECTORY':
+            logging.info(f"Skipping directory: {full_path}")
+            return
+
         retention_period = None
 
-        if hasattr(args, 'retention') and args.retention: 
+        if hasattr(args, 'retention') and args.retention:
             retention_period = parse_retention(args.retention)
         else:
             logging.debug("Retention period not provided. No retention period will be set.")
@@ -230,67 +276,38 @@ def lock_file(rest_client, args, full_path, file_number, debug):
 
         while attempt < max_retries:
             try:
-                config = load_config(args.config_file)
-                api_host = config['DEFAULT']['API_HOST']
-                api_port = config['DEFAULT']['API_PORT']
-                username = config['DEFAULT']['USERNAME']
-                password = config['DEFAULT']['PASSWORD']
-
-                rest_client = RestClient(api_host, api_port)
-                rest_client.login(username, password)
-
-                try:
-                    response = fs.modify_file_lock(
-                        conninfo=rest_client.conninfo,
-                        _credentials=rest_client.credentials,
-                        path=full_path,
-                        retention_period=retention_period,
-                        legal_hold=args.legal_hold
-                    )
-                except Exception as e:
-                    logging.info(f"An error occurred while calling modify_file_lock: {str(e)}")
-                    raise
-
+                response = fs.modify_file_lock(
+                    conninfo=rest_client.conninfo,
+                    _credentials=rest_client.credentials,
+                    path=full_path,
+                    retention_period=retention_period,
+                    legal_hold=args.legal_hold
+                )
                 success_message = f"Successfully locked file: {full_path}"
                 logging.info(success_message)
                 if args.output:
                     with open(args.output, 'a') as log_file:
                         log_file.write(f"{datetime.now()} - INFO - {success_message}\n")
                 logging.debug(f"Response: {response}")
+
+                # Update the debounce record
+                recent_locks[full_path] = current_time
                 break
 
-            except requests.exceptions.RequestException as e:
-                attempt += 1
-                error_message = f"Failed to lock file: {full_path}. Attempt {attempt} of {max_retries}."
-                logging.error(error_message)
-                if args.output:
-                    with open(args.output, 'a') as log_file:
-                        log_file.write(f"{datetime.now()} - ERROR - {error_message}\n")
-                logging.debug(f"RequestException details: {e}")
-                time.sleep(2)
             except Exception as e:
-                error_message = f"Unexpected error when attempting to lock file: {full_path}."
-                logging.error(error_message)
-                if args.output:
-                    with open(args.output, 'a') as log_file:
-                        log_file.write(f"{datetime.now()} - ERROR - {error_message}\n")
-                logging.debug(f"Exception details: {e}")
-                break
+                attempt += 1
+                logging.error(f"Unexpected error when attempting to lock file: {full_path}. Error: {e}")
+                time.sleep(2)
 
         if attempt == max_retries:
-            error_message = f"Max retries reached. Failed to lock file: {full_path}"
-            logging.error(error_message)
-            if args.output:
-                with open(args.output, 'a') as log_file:
-                    log_file.write(f"{datetime.now()} - ERROR - {error_message}\n")
+            logging.error(f"Max retries reached. Failed to lock file: {full_path}")
 
     except Exception as e:
-        error_message = f"Error in lock_file function: {e}."
-        logging.error(error_message)
-        if args.output:
-            with open(args.output, 'a') as log_file:
-                log_file.write(f"{datetime.now()} - ERROR - {error_message}\n")
+        logging.error(f"Error in lock_file function: {e}.")
         logging.debug(f"Exception details: {e}")
+
+    finally:
+        logging.debug("RestClient connection management completed.")
 
 ################################################################################
 # function configure_interactive - Interactive configuration file creation
@@ -406,7 +423,7 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
                     if change_type in notification_types_to_handle:
                         new_file_abs_path = (str(file_path) + '/' + str(change_path)).replace('//', '/')
                         notification_message = f"Received {change_type} notification for {new_file_abs_path} "
-                        logging.info(notification_message)
+                        logging.debug(notification_message)
                         if args.output:
                             with open(args.output, 'a') as log_file:
                                 log_file.write(f"{datetime.now()} - INFO - {notification_message}\n")
@@ -426,7 +443,7 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
                         try:
                             lock_file(rest_client, args, new_file_abs_path, file_number, debug)
                         except Exception as e:
-                            print(f"lock_file: An error occurred in {inspect.currentframe().f_code.co_name}: {str(e)}")
+                            logging.error(f"lock_file: An error occurred in {inspect.currentframe().f_code.co_name}: {str(e)}")
 
                         message = f"Waiting for notifications..."
 
@@ -443,7 +460,7 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
         logging.error("Error occurred while streaming notifications.")
         if args.output:
             with open(args.output, 'a') as log_file:
-                log_file.write(f"{datetime.now()} - ERROR - Error occurred while streaming notifications.\n")
+                log_file.write(f"{datetime.now()} - ERROR - Error occurred while streaming notifications: {e}.\n")
         logging.debug(f"Exception details: {e}")
 
 ################################################################################
