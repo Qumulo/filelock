@@ -78,7 +78,7 @@ def setup_logging(is_debug, log_file=None):
     log_level = logging.DEBUG if is_debug else logging.INFO
     handlers = [logging.StreamHandler(sys.stdout)]
     
-    if log_file:  # Ensure to use `log_file` here
+    if log_file: 
         handlers.append(logging.FileHandler(log_file))
     
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s', handlers=handlers)
@@ -207,8 +207,6 @@ def parse_retention(retention_period):
 # function lock_file - Lock a file using Qumulo API's modify_file_lock method
 ################################################################################
 
-from time import time
-
 recent_locks = {}
 
 def lock_file(rest_client, args, full_path, file_number, debug, cooldown=5):
@@ -221,7 +219,7 @@ def lock_file(rest_client, args, full_path, file_number, debug, cooldown=5):
 
         full_path = re.sub(r'/+', '/', full_path)
 
-        current_time = time()
+        current_time = time.time()
         if full_path in recent_locks and (current_time - recent_locks[full_path]) < cooldown:
             logging.debug(f"Skipping recently locked file: {full_path}")
             return
@@ -287,10 +285,9 @@ def lock_file(rest_client, args, full_path, file_number, debug, cooldown=5):
                 logging.info(success_message)
                 if args.output:
                     with open(args.output, 'a') as log_file:
-                        log_file.write(f"{datetime.now()} - INFO - {success_message}\n")
+                        log_file.write(f"{datetime.now()} - INFO - {success_message}")
                 logging.debug(f"Response: {response}")
 
-                # Update the debounce record
                 recent_locks[full_path] = current_time
                 break
 
@@ -379,9 +376,7 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
 
     try:
         notification_types_to_handle = [
-            "child_file_added",
-            "child_acl_changed",
-            "child_extra_attrs_changed"
+            "child_file_added"
         ]
 
         if args.file_num:
@@ -407,7 +402,7 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
             id_=id_,
         ).data
 
-        logging.info(f"Listening for change notifications for directory: {path} [file_num {file_number}] ")
+        logging.info(f"Listening for change notifications on directory: {path} [file_num {file_number}] ")
 
         for change in changes_iterator:
             logging.debug(f"Received change object: {change}")
@@ -428,22 +423,23 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
                             with open(args.output, 'a') as log_file:
                                 log_file.write(f"{datetime.now()} - INFO - {notification_message}\n")
                         try:
-                            print(f"Waiting for {interval} seconds before locking the file...", end='', flush=True)
+                            if interval != 0:
+                                print(f"Delay of {interval} seconds before locking the file...", end='', flush=True)
+
                         except BrokenPipeError:
-                            logging.warning("Output stream was closed unexpectedly.")
+                            logging.warning("BrokenPipeError: Output stream was closed unexpectedly: {BrokenPipeError}.")
                             break
                         for _ in range(interval):
                             time.sleep(1)
                             try:
                                 print('.', end='', flush=True)
                             except BrokenPipeError:
-                                logging.warning("Output stream was closed unexpectedly.")
+                                logging.warning("BrokenPipeError: Output stream was closed unexpectedly: {BrokenPipeError}.")
                                 break
-                        print()
                         try:
                             lock_file(rest_client, args, new_file_abs_path, file_number, debug)
                         except Exception as e:
-                            logging.error(f"lock_file: An error occurred in {inspect.currentframe().f_code.co_name}: {str(e)}")
+                            print(f"lock_file: An error occurred in {inspect.currentframe().f_code.co_name}: {str(e)}")
 
                         message = f"Waiting for notifications..."
 
@@ -451,13 +447,13 @@ def stream_notifications(rest_client, args, debug=False, output_file=None):
                             with open(args.output, 'a') as log_file:
                                 log_file.write(f"{datetime.now()} - INFO - {message}\n")
                         else:
-                            logging.info(message)
+                            logging.debug(message)
                     else:
                         logging.debug(f"Ignored change of type: {change_type} at path: {change_path}")
             else:
                 logging.warning(f"Unexpected change format: {change}")
     except Exception as e:
-        logging.error("Error occurred while streaming notifications.")
+        logging.error(f"Error occurred while streaming notifications: {e}")
         if args.output:
             with open(args.output, 'a') as log_file:
                 log_file.write(f"{datetime.now()} - ERROR - Error occurred while streaming notifications: {e}.\n")
