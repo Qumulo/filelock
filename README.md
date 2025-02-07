@@ -279,37 +279,36 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
 
     You should see output similar to the example output below: 
 
-```bash
-$ ~/filelock$ ./qfs_filelock.py --directory-path /filelock_test/subdir1 --recursive --interval 0 --legal-hold
-#################################################################
-#                      QFS File Lock Script                     #
-#                        2025-02-07 14:22                       #
-#################################################################
-# Directory:        /filelock_test/subdir1/                     #
-# File Number:      20003                                       #
-# Polling Interval: 0 secs                                      #
-# Recursive:        True                                        #
-# Config File:      qfs_filelock_config.ini                     #
-# Legal Hold:       True                                        #
-# API Host:         10.1.2.3                                    #
-# API Port:         8000                                        #
-# Username:         admin                                       #
-#################################################################
-2025-02-07 14:22:31,419 - INFO - Listening for change notifications on directory: /filelock_test/subdir1/ [file_num 20003]
-2025-02-07 14:22:47,838 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_1.txt
-2025-02-07 14:22:47,854 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_2.txt
-2025-02-07 14:22:47,873 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_3.txt
-2025-02-07 14:22:47,890 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_4.txt
-2025-02-07 14:22:47,921 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_5.txt
-2025-02-07 14:22:47,939 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_6.txt
-2025-02-07 14:22:47,965 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_7.txt
-2025-02-07 14:22:47,990 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_8.txt
-2025-02-07 14:22:48,007 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_9.txt
-...
-```
+    ```bash
+    $ ./qfs_filelock.py --directory-path /filelock_test/subdir1 --recursive --interval 0 --legal-hold
+    #################################################################
+    #                      QFS File Lock Script                     #
+    #                        2025-02-07 14:22                       #
+    #################################################################
+    # Directory:        /filelock_test/subdir1/                     #
+    # File Number:      20003                                       #
+    # Polling Interval: 0 secs                                      #
+    # Recursive:        True                                        #
+    # Config File:      qfs_filelock_config.ini                     #
+    # Legal Hold:       True                                        #
+    # API Host:         10.1.2.3                                    #
+    # API Port:         8000                                        #
+    # Username:         admin                                       #
+    #################################################################
+    2025-02-07 14:22:31,419 - INFO - Listening for change notifications on directory: /filelock_test/subdir1/ [file_num 20003]
+    2025-02-07 14:22:47,838 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_1.txt
+    2025-02-07 14:22:47,854 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_2.txt
+    2025-02-07 14:22:47,873 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_3.txt
+    2025-02-07 14:22:47,890 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_4.txt
+    2025-02-07 14:22:47,921 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_5.txt
+    2025-02-07 14:22:47,939 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_6.txt
+    2025-02-07 14:22:47,965 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_7.txt
+    2025-02-07 14:22:47,990 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_8.txt
+    2025-02-07 14:22:48,007 - INFO - Successfully locked file: /filelock_test/subdir1/locked_file_9.txt
+    ...
+    ```
 
-
-    ### Verifying a file has been put on legal-hold
+### Verifying a file has been put on legal-hold
 
     ```bash
     qq --host 10.1.2.3 fs_file_get_attr --path /filelock_test/subdir1/locked_file_77.txt --retrieve-file-lock | jq .lock
