@@ -247,7 +247,7 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
 
     This command retrieves the file's attributes, including the lock status, and displays it using `jq`.
 
-4. **End-to-End Demonstration: Setting Legal Hold on all new files written to a directory**
+4. **End-to-End Example: Setting Legal Hold on all new files written to a directory**
 
     *This was performed on a new Ubuntu 22_04 server*
 
