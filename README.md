@@ -261,6 +261,16 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
     qq --host 10.1.2.3 login -u admin -p MyPassword2!
     ```
 
+    ### Configure qfs_filelock
+    ```bash
+    python3 ./qfs_filelock.py --configure
+    Configuring qfs_filelock_config.ini
+    Enter API Host: 10.1.2.3
+    Enter API Port: 8000
+    Enter Username: admin
+    Enter Password: MyPassword2!
+    ```
+
     ### Start the filelock script with the required parameters
 
     ```bash
