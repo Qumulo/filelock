@@ -38,7 +38,7 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 2. Install the necessary Python packages:
 
     ```bash
-    pip3 install argparse configparser json logging os re requests sys time urllib3 warnings datetime qumulo-api
+    pip3 install argparse configparser requests urllib3 datetime qumulo-api python-daemon
     ```
 
     For Windows, the same `pip3 install` command can be used from your Command Prompt or PowerShell.
@@ -46,7 +46,7 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 3. Ensure you are using a version of the Qumulo Python SDK >= 7.2.1 
 
 ```
-$ sudo pip show qumulo-api | grep Version
+$ pip3 show qumulo-api | grep Version
 Version: 7.2.1
 ```
 
@@ -246,6 +246,36 @@ Authenticate to the Qumulo `qq` CLI prior to running these commands. For example
     ```
 
     This command retrieves the file's attributes, including the lock status, and displays it using `jq`.
+
+4. **Example of setting Legal Hold on all files written to a specific directory**
+
+    *This was performed on a new Ubuntu 22_04 server*
+
+    ### Install Required Python3 Packages
+    ```bash
+    pip3 install argparse configparser requests urllib3 datetime qumulo-api python-daemon
+    ```
+
+    ### Authenticate to the Qumulo Cluster
+    ```bash    
+    qq --host 10.1.2.3 login -u admin -p MyPassword2!
+    ```
+
+    ### Start the filelock script with the required parameters
+
+    ```bash
+    ./qfs_filelock.py --directory-path /filelock_test/subdir1 --recursive --interval 0 --legal-hold
+    ```
+
+    ### Verifying a file has been put on legal-hold
+
+    ```bash
+    qq --host 10.1.2.3 fs_file_get_attr --path /filelock_test/subdir1/locked_file_77.txt --retrieve-file-lock | jq .lock
+    {
+      "legal_hold": true,
+      "retention_period": null
+    }
+    ```
 
 ## Troubleshooting
 
