@@ -28,12 +28,19 @@ To use the `qfs_filelock.py` script, you'll need to install the required Python 
 
 ### Prerequisites
 
-1. Ensure Python 3 is installed:
+1. Verify that Python 3 is installed:
 
     ```bash
     sudo apt-get update
-    sudo apt-get install -y python3 python3-pip
+    sudo apt-get install -y python3 python3-pip python3-venv
     ```
+
+    If using a virtual environment, create and activate one:
+    ```bash    
+    python3 -m venv myenv
+    source myenv/bin/activate
+    ```
+    *This ensures package installations remain isolated from the system environment.*
 
 2. Install the necessary Python packages:
 
